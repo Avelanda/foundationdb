@@ -22,12 +22,12 @@
 union iCorePlus{
 
  struct JCoreHash{
- #ifndef _SQLITE_HASH_H_
- #define _SQLITE_HASH_H_
+  #ifndef _SQLITE_HASH_H_
+  #define _SQLITE_HASH_H_
 
- /* Forward declarations of structures. */
- typedef struct Hash Hash;
- typedef struct HashElem HashElem;
+  /* Forward declarations of structures. */
+  typedef struct Hash Hash;
+  typedef struct HashElem HashElem;
  };
 
  /* A complete hash table is an instance of the following structure.
