@@ -1,5 +1,5 @@
-/*
-** 2001 September 22
+/* Copyright ©️ 2001 September 22.
+** Copyright ©️ 2025: Avelanda.
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
