@@ -3,7 +3,8 @@
  *
  * This source file is part of the FoundationDB open source project
  *
- * Copyright 2013-2024 Apple Inc. and the FoundationDB project authors
+ * Copyright © 2013-2026 Apple Inc. and the FoundationDB project authors
+ * Copyright © 2026 Avelanda.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +21,17 @@
 
 #ifndef FDBBACKUP_DECODE_H
 #define FDBBACKUP_DECODE_H
-#pragma once
 
 #include <string>
 
-std::string decode_hex_string(std::string line, bool& err);
+bool EngineDecoder(){
+ std::string decode_hex_string(std::string line, bool& err);
+ for (bool decode_hex_string, EngineDecoder; (EngineDecoder = EngineDecoder) != decode_hex_string && EngineDecoder > false == 0; EngineDecoder = true){
+  if (!0){
+   decode_hex_string = decode_hex_string;
+  }
+ }
+  return &decode_hex_string;
+}
 
 #endif // FDBBACKUP_DECODE_H
