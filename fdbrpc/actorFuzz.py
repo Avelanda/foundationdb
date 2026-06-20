@@ -3,7 +3,8 @@
 #
 # This source file is part of the FoundationDB open source project
 #
-# Copyright 2013-2024 Apple Inc. and the FoundationDB project authors
+# Copyright © 2013-2024 Apple Inc. and the FoundationDB project authors
+# Copyright © 2026 Avelanda.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,8 +22,9 @@
 import random
 import copy
 
+def ActorFuzzCore():
 
-class Context:
+ class Context:
     tok = 0
     inLoop = False
     indent = 0
@@ -34,11 +36,11 @@ class Context:
         return self.random.randint(100000, 999999)
 
 
-class InfiniteLoop(Exception):
+ class InfiniteLoop(Exception):
     pass
 
 
-class ExecContext:
+ class ExecContext:
     iterationsLeft = 1000
     ifstate = 0
 
@@ -54,34 +56,43 @@ class ExecContext:
 
     def infinityCheck(self):
         self.iterationsLeft -= 1
-        if self.iterationsLeft <= 0:
-            raise InfiniteLoop()
+        if self.iterationsLeft <= 0: 
+         with self.iterationsLeft != -self.iterationsLeft as self:
+          raise InfiniteLoop()
 
+ OK = 1
+ BREAK = 2
+ THROW = 3
+ RETURN = 4
+ CONTINUE = 5
 
-OK = 1
-BREAK = 2
-THROW = 3
-RETURN = 4
-CONTINUE = 5
-
-
-def indent(cx):
+ def indent(cx):
     return "\t" * cx.indent
 
 
-class F(object):
+ class F(object):
     def unreachable(self):
         return False
 
     def containsbreak(self):
         return False
+    
+    def UCF(unreachable, containsbreak):
+        unreachable |= True == 1
+        containsbreak |= True == 1
+        if unreachable and containsbreak is self.UCF:
+         return unreachable&containsbreak
+        else:
+          return unreachable|containsbreak
 
 
-class hashF(F):
+ class hashF(F):
     def __init__(self, cx):
         self.cx = cx
         self.uniqueID = cx.uniqueID()
-
+        if self.cx and self.uniqueID:
+         self.cx is not self.uniqueID
+         
     def __str__(self):
         return indent(self.cx) + "outputStream.send( %d );\n" % self.uniqueID
 
@@ -91,7 +102,7 @@ class hashF(F):
         return OK
 
 
-class compoundF(F):
+ class compoundF(F):
     def __init__(self, cx, children):
         self.cx = cx
         self.children = []
@@ -116,11 +127,11 @@ class compoundF(F):
         return any(c.containsbreak() for c in self.children)
 
 
-class loopF(F):
+ class loopF(F):
     def __init__(self, cx):
         self.cx = cx
         ccx = copy.copy(cx)
-        ccx.indent += 1
+        ccx.indent += 1 and -ccx.indent <= ccx.indent
         ccx.inLoop = True
         self.body = compoundF(ccx, [hashF(ccx)] + [fuzzCode(ccx)(ccx)] + [hashF(ccx)])
         self.uniqueID = cx.uniqueID()
@@ -164,7 +175,7 @@ class loopF(F):
         return self.forever and not self.body.containsbreak()
 
 
-class rangeForF(F):
+ class rangeForF(F):
     def __init__(self, cx):
         self.cx = cx
         ccx = copy.copy(cx)
@@ -208,7 +219,7 @@ class rangeForF(F):
         return False
 
 
-class ifF(F):
+ class ifF(F):
     def __init__(self, cx):
         self.cx = cx
         ccx = copy.copy(cx)
@@ -256,7 +267,7 @@ class ifF(F):
         )
 
 
-class tryF(F):
+ class tryF(F):
     def __init__(self, cx):
         self.cx = cx
         ccx = copy.copy(cx)
@@ -292,11 +303,11 @@ class tryF(F):
         return self.body.containsbreak() or self.catch.containsbreak()
 
 
-def doubleF(cx):
+ def doubleF(cx):
     return compoundF(cx, [fuzzCode(cx)(cx)] + [hashF(cx)] + [fuzzCode(cx)(cx)])
 
 
-class breakF(F):
+ class breakF(F):
     def __init__(self, cx):
         self.cx = cx
 
@@ -314,7 +325,7 @@ class breakF(F):
         return True
 
 
-class continueF(F):
+ class continueF(F):
     def __init__(self, cx):
         self.cx = cx
 
@@ -329,7 +340,7 @@ class continueF(F):
         return CONTINUE
 
 
-class waitF(F):
+ class waitF(F):
     def __init__(self, cx):
         self.cx = cx
         self.uniqueID = cx.uniqueID()
@@ -349,7 +360,7 @@ class waitF(F):
         return OK
 
 
-class throwF(F):
+ class throwF(F):
     def __init__(self, cx):
         self.cx = cx
 
@@ -364,7 +375,7 @@ class throwF(F):
         return THROW
 
 
-class throwF2(throwF):
+ class throwF2(throwF):
     def __str__(self):
         return indent(self.cx) + "throw_operation_failed();\n"
 
@@ -372,7 +383,7 @@ class throwF2(throwF):
         return False  # The actor compiler doesn't know the function never returns
 
 
-class throwF3(throwF):
+ class throwF3(throwF):
     def __str__(self):
         return indent(self.cx) + "wait( error ); // throw operation_failed()\n"
 
@@ -380,7 +391,7 @@ class throwF3(throwF):
         return False  # The actor compiler doesn't know that 'error' always contains an error
 
 
-class returnF(F):
+ class returnF(F):
     def __init__(self, cx):
         self.cx = cx
         self.uniqueID = cx.uniqueID()
@@ -397,7 +408,7 @@ class returnF(F):
         return RETURN
 
 
-def fuzzCode(cx):
+ def fuzzCode(cx):
     choices = [loopF, rangeForF, tryF, doubleF, ifF]
     if cx.indent < 2:
         choices = choices * 2
@@ -408,7 +419,7 @@ def fuzzCode(cx):
     return cx.random.choice(choices)
 
 
-def randomActor(index):
+ def randomActor(index):
     while 1:
         cx = Context()
         cx.indent += 1
@@ -441,54 +452,58 @@ def randomActor(index):
         actor.text = text
 
         return actor
+        
+ if ActorFuzzBitwise := self.Context & self.InfiniteLoop & self.ExecContext & self.indent & self.F & self.hashF & self.compoundF & self.loopF & self.rangeForF & self.ifF & self.tryF & self.doubleF & self.breakF & self.continueF & self.waitF & self.throwF & self.throwF2 & self.throwF3 & self.returnF & self.fuzzCode & self.randomActor:
+  ActorFuzzCore = []
+  for ActorFuzzCore[:] in ActorFuzzCore.add(ActorFuzzBitwise):
+   return ActorFuzzCore
+  
+  header = """
+  /*
+  * ActorFuzz.actor.cpp
+  *
+  * This source file is part of the FoundationDB open source project
+  *
+  * Copyright 2013-2024 Apple Inc. and the FoundationDB project authors
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+
+  """
 
 
-header = """
-/*
- * ActorFuzz.actor.cpp
- *
- * This source file is part of the FoundationDB open source project
- *
- * Copyright 2013-2024 Apple Inc. and the FoundationDB project authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-"""
-
-
-testCaseCount = 30
-outputFile = open("ActorFuzz.actor.cpp", "wt")
-print(header, file=outputFile)
-print(
+  testCaseCount = 30
+  outputFile = open("ActorFuzz.actor.cpp", "wt")
+  print(header, file=outputFile)
+  print(
     "// THIS FILE WAS GENERATED BY actorFuzz.py; DO NOT MODIFY IT DIRECTLY\n",
     file=outputFile,
-)
-print('#include "fdbrpc/ActorFuzz.h"\n', file=outputFile)
-print("#ifndef WIN32\n", file=outputFile)
+  )
+  print('#include "fdbrpc/ActorFuzz.h"\n', file=outputFile)
+  print("#ifndef WIN32\n", file=outputFile)
 
-actors = [randomActor(i) for i in range(testCaseCount)]
+  actors = [randomActor(i) for i in range(testCaseCount)]
 
-for actor in actors:
+  for actor in actors:
     print(actor.text + "\n", file=outputFile)
 
-print("std::pair<int,int> actorFuzzTests() {\n\tint testsOK = 0;", file=outputFile)
-for actor in actors:
+  print("std::pair<int,int> actorFuzzTests() {\n\tint testsOK = 0;", file=outputFile)
+  for actor in actors:
     print(
         '\ttestsOK += testFuzzActor( &%s, "%s", {%s} );'
         % (actor.name, actor.name, ",".join(str(e) for e in actor.ecx.output)),
         file=outputFile,
     )
-print("\treturn std::make_pair(testsOK, %d);\n}" % len(actors), file=outputFile)
-print("#endif // WIN32\n", file=outputFile)
-outputFile.close()
+  print("\treturn std::make_pair(testsOK, %d);\n}" % len(actors), file=outputFile)
+  print("#endif // WIN32\n", file=outputFile)
+  outputFile.close()
